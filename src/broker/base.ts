@@ -3,8 +3,10 @@ import { Order, OrderOptions, OrderType } from '../order';
 import { DataStore } from '../data';
 import { Logger } from '../logger';
 import { CommissionFn, CommissionOptions, innerCommissionFn } from '../commission';
-import { isFunction } from '../util';
+import { isFunction, isNumber } from '../util';
 import { Position } from './position';
+import { Trade } from './trade';
+import { Strategy } from 'src/stratergy';
 
 function assertCash(cash: number) {
   if (cash <= 0) throw new Error('cash must be greater than zero');
@@ -12,7 +14,7 @@ function assertCash(cash: number) {
 
 export interface BrokerOptions {
   cash?: number;
-  commission?: CommissionOptions | CommissionFn;
+  commission?: number | CommissionOptions | CommissionFn;
 }
 
 export class Broker {
@@ -22,11 +24,18 @@ export class Broker {
     return this._cash;
   }
   
-  protected _positions: Map<DataStore, Position>;
+  protected _products: Map<DataStore, {
+    position: Position;
+    trade: Trade;
+    orders: Order[];
+  }>;
 
   constructor(options?: BrokerOptions) {
     this._cash = options?.cash || 0;
-    const comm = options.commission;
+    let comm = options.commission;
+    if (isNumber(comm)) {
+      comm = { comm } as CommissionOptions;
+    }
     if (isFunction(comm)) {
       this._commFn = comm as CommissionFn;
     } else if (comm) {
@@ -36,7 +45,7 @@ export class Broker {
     } else {
       this._commFn = null;
     }
-    this._positions = new Map();
+    this._products = new Map();
   }
 
   addCash(cash: number) {
@@ -52,31 +61,24 @@ export class Broker {
     this._cash -= cash;
   }
 
-  next(product: DataStore, logger: Logger) {
-    // do nothing by default
+  next(product: DataStore, strategies: Strategy[], logger: Logger) {
+    throw new Error('abstract method');
   }
 
   getPosition(data: DataStore): Position {
-    return this._positions.get(data);
+    return this._products.get(data)?.position;
   }
 
   get value() {
     let value = this._cash;
-    this._positions.forEach(position => {
-      value += position.value;
+    this._products.forEach((productInfo, product) => {
+      if (!productInfo.position) return;
+      value += productInfo.position.size * product.close.at(-1);
     });
     return value;
   }
 
-  async buy(options: OrderOptions): Promise<Order> {
-    throw new Error('abstract method');
-  }
-
-  async sell(options: OrderOptions): Promise<Order> {
-    throw new Error('abstract method');
-  }
-
-  async submit(order: Order): Promise<void> {
+  async submitOrder(order: Order): Promise<Order> {
     throw new Error('abstract method');
   }
 }

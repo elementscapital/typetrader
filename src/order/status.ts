@@ -3,7 +3,7 @@ export enum OrderStatus {
   Submitted = 'Submitted',
   Accepted = 'Accepted',
   Partial = 'Partial',
-  Complete = 'Complete',
+  Completed = 'Completed',
   Rejected = 'Rejected',
   Margin = 'Margin',
   Cancelled = 'Cancelled',

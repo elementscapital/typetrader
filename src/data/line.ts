@@ -36,12 +36,6 @@ export class DataColumnLine {
    * @internal
    */
   _line: DataStore;
-  
-  /**
-   * @internal
-   * indicator max period
-   */
-  _imp: number;
   /**
    * @internal
    * indicators use this data store
@@ -51,7 +45,6 @@ export class DataColumnLine {
   readonly column: DataColumn;
 
   constructor(line: DataStore, column: DataColumn) {
-    this._imp = 0;
     this._ind = [];
     this._line = line;
     this.column = column;
@@ -61,7 +54,15 @@ export class DataColumnLine {
     return this._line.at(offset)[this.column];
   }
 
+  get index() {
+    return this._line._index;
+  }
+
   get length() {
     return this._line.length;
+  }
+
+  toArray() {
+    return this._line._array.map(v => v[this.column]);
   }
 }

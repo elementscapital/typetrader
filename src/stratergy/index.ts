@@ -3,6 +3,7 @@ import { Order, OrderOptions } from '../order';
 import { Broker } from '../broker';
 import { DataStore } from '../data';
 import { Logger } from '../logger';
+import { Trade } from 'src/broker/trade';
 
 type StratOrderOptions = Exclude<OrderOptions, 'product'>;
 
@@ -22,8 +23,20 @@ export class Strategy {
     return this._broker;
   }
 
-  getPosition(data?: DataStore) {
-    return this._broker.getPosition(data || this.data);
+  get length() {
+    return this.data._index + 1;
+  }
+
+  get position() {
+    return this._broker.getPosition(this.data);
+  }
+
+  onTrade(trade: Trade) {
+    // do nothing
+  }
+
+  onOrder(order: Order) {
+    // do nothing
   }
 
   async start(logger: Logger): Promise<void> {
@@ -34,17 +47,26 @@ export class Strategy {
     throw new Error('abstract method');
   }
 
-  buy(options?: StratOrderOptions): Promise<Order> {
-    return this._broker.buy({
-      ...options,
+  private _submit(sizeOrOptions: number | StratOrderOptions, isBuy: boolean): Promise<Order> {
+    const order = new Order({
+      ...(typeof sizeOrOptions === 'number' ? { size: sizeOrOptions } : sizeOrOptions),
       product: this.data
+    }, isBuy);
+    order.on('status-change', () => {
+      this.onOrder(order);
     });
+    return this._broker.submitOrder(order);
   }
 
-  sell(options?: StratOrderOptions): Promise<Order> {
-    return this._broker.sell({
-      ...options,
-      product: this.data
-    });
+  buy(size: number): Promise<Order>;
+  buy(options?: StratOrderOptions): Promise<Order>;
+  buy(sizeOrOptions?: number | StratOrderOptions): Promise<Order> {
+    return this._submit(sizeOrOptions, true);
+  }
+
+  sell(size: number): Promise<Order>;
+  sell(options?: StratOrderOptions): Promise<Order>;
+  sell(sizeOrOptions?: number | StratOrderOptions): Promise<Order> {
+    return this._submit(sizeOrOptions, false);
   }
 }

@@ -2,6 +2,7 @@ import { ConsoleLogger, Logger } from '../logger';
 import { DataProvider, DataStore, DATA_COLUMNS } from '../data';
 import { Strategy } from '../stratergy';
 import { Broker, BrokerOptions, LocalBroker } from '../broker';
+import { Indicator } from 'src/indicator';
 
 interface TypetraderOptions {
   logger?: Logger;
@@ -26,19 +27,29 @@ export class Typetrader {
   }
 
   private async _run(store: DataStore, strats: Strategy[]) {
-    for await(const column of DATA_COLUMNS) {
-      for await(const indicator of store[column]._ind) {
-        try {
-          indicator._array = await indicator.calc(this.logger);
-        } catch(ex) {
-          this.logger.error(ex);
-          return;
+    for (const column of DATA_COLUMNS) {
+      if (!store[column]._ind.length) continue;
+      const queue = store[column]._ind.slice();
+      const set: Set<Indicator> = new Set(queue);
+      try {
+        while(queue.length > 0) {
+          const indi = queue.shift();
+          indi._update(this.logger);
+          indi._ind.forEach(dep => {
+            if (!set.has(dep)) {
+              queue.push(dep);
+              set.add(dep);
+            }
+          });
         }
+      } catch(ex) {
+        this.logger.error(ex);
+        return;
       }
     }
 
     while(store._index < store._array.length) {
-      this.broker.next(store, this.logger);
+      this.broker.next(store, strats, this.logger);
       try {
         for await(const strat of strats) {
           await strat.next(this.logger);

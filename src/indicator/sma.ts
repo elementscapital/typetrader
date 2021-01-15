@@ -1,7 +1,8 @@
-import { Indicator } from './base';
+import { SingleDataIdicator } from './base';
+import { SMA } from 'talib-binding';
 
-export class SimpleMovingAverage extends Indicator  {
-  async calc(): Promise<number[]> {
-    return new Array(this.data.length).fill(0);
+export class SimpleMovingAverage extends SingleDataIdicator  {
+  _calc(points: number[]): number[] {
+    return SMA(points, this.period);
   }
 }

@@ -5,7 +5,7 @@ export function getMaxIndicatorPeriod(store: DataStore): number {
   let mp = 0;
   DATA_COLUMNS.forEach(column => {
     store[column]._ind.forEach(ind => {
-      mp = Math.max(ind.period);
+      mp = Math.max(mp, ind.maxPeriod);
     });
   });
   return mp;

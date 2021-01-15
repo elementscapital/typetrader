@@ -109,7 +109,7 @@ export class CSVData<T extends string> extends DataProvider<T> {
         });
         store._array.push(dp);
       });
-      store._index = getMaxIndicatorPeriod(store);
+      store._index = Math.max(0, getMaxIndicatorPeriod(store) - 1);
     }
   }
 

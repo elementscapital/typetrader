@@ -1,9 +1,11 @@
 import { DataStore } from 'src/data';
+import { Strategy } from 'src/stratergy';
 import {
-  Order, OrderOptions, OrderStatus, OrderType
+  Order, OrderStatus, OrderType
 } from '../order';
 import { Broker, BrokerOptions } from './base';
 import { Position } from './position';
+import { Trade, TradeStatus } from './trade';
 
 /**
  * Simple local broker.
@@ -11,24 +13,23 @@ import { Position } from './position';
  * This is the default broker typetrader used.
  */
 export class LocalBroker extends Broker {
-  /**
-   * active orders
-   */
-  private _orders: Map<DataStore, Order[]>;
 
   constructor(options?: BrokerOptions) {
     super({
       ...options,
       cash: 100000
     });
-    this._orders = new Map();
   }
 
-  next(product: DataStore) {
-    const orders = this._orders.get(product);
-    if (!orders?.length) return;
+  next(product: DataStore, strats: Strategy[]) {
+    const productInfo = this._products.get(product);
+    if (!productInfo?.orders.length) {
+      return;
+    }
+   
+    let { position, trade } = productInfo;
 
-    orders.forEach(order => {
+    productInfo.orders.forEach(order => {
       if (order.type !== OrderType.Market) {
         throw new Error('not implement');
       }
@@ -41,44 +42,89 @@ export class LocalBroker extends Broker {
         order.comm = this._commFn(order.size, dealPrice);
         this._cash -= order.comm;
       }
-      let position = this._positions.get(order.product);
+      const preS = position ? position.size : 0;
       if (!position) {
-        position = new Position({
-          product: order.product,
+        position = productInfo.position = new Position({
           size: dealSize,
           price: dealPrice
         });
-        this._positions.set(order.product, position);
       } else {
         position.size += dealSize;
       }
-      order.status = OrderStatus.Complete;
+      
+      const postS = position ? position.size : 0;
+      if (postS === 0) {
+        position = productInfo.position = null;
+      } else if (preS !== 0) {
+        if ((preS > 0 && postS > 0) || (preS < 0 && postS < 0)) {
+          // calcuate average price
+          position.price = (preS * position.price + dealSize * dealPrice) / (preS + dealSize);
+        } else {
+          // close and open position
+          position.price = dealPrice;
+          position.originPrice = dealPrice;
+        }
+      }
+      order.status = OrderStatus.Completed;
+
+      if (!trade && preS !== 0) throw new Error('unexpected');
+
+      // https://zhuanlan.zhihu.com/p/299630905
+      const cost = -order.cost;
+      const commcost = cost - order.comm;
+      if (!trade) {
+        trade = productInfo.trade = new Trade({
+          pnl: cost, pnlcomm: commcost
+        });
+        trade.on('status-change', (_trade: Trade) => {
+          strats.forEach(strat => strat.onTrade(_trade));
+        });
+        trade.status = TradeStatus.Open;
+      } else if (postS === 0) {
+        if (!trade) throw new Error('unexpected');
+        trade.pnl += cost;
+        trade.pnlcomm += commcost;
+        trade.status = TradeStatus.Closed;
+        trade = productInfo.trade = null;
+      } else if (preS > 0 && postS < 0 || preS < 0 && postS > 0) {
+        if (!trade) throw new Error('unexpected');
+        const prePercent = Math.abs(preS / (postS - preS));
+        trade.pnl += cost * prePercent;
+        trade.pnlcomm += commcost * prePercent;
+        trade.status = TradeStatus.Closed;
+        const postPercent = Math.abs(postS / (postS - preS));
+        trade = productInfo.trade = new Trade({
+          pnl: cost * postPercent,
+          pnlcomm: commcost * postPercent
+        });
+        trade.on('status-change', (_trade: Trade) => {
+          strats.forEach(strat => strat.onTrade(_trade));
+        });
+        trade.status = TradeStatus.Open;
+      } else {
+        trade.pnl += cost;
+        trade.pnlcomm += commcost;
+      }
     });
-    orders.length = 0; // clear completed orders
-
-    this._positions.get(product).price = product.close.at(0);
+    productInfo.orders.length = 0; // clear completed orders
   }
 
-  async buy(options: OrderOptions): Promise<Order> {
-    const order = new Order(options, true);
-    await this.submit(order);
-    return order;
-  }
-
-  async sell(options: OrderOptions): Promise<Order> {
-    const order = new Order(options, false);
-    await this.submit(order);
-    return order;
-  }
-
-  async submit(order: Order): Promise<void> {
-    let orders = this._orders.get(order.product);
-    if (!orders) {
-      orders = [];
-      this._orders.set(order.product, orders);
+  async submitOrder(order: Order): Promise<Order> {
+    if (order.size === 0) {
+      throw new Error('order size cant not be zero');
     }
-    orders.push(order);
+    let product = this._products.get(order.product);
+    if (!product) {
+      product = {
+        position: null,
+        trade: null,
+        orders: []
+      };
+      this._products.set(order.product, product);
+    }
+    product.orders.push(order);
     order.status = OrderStatus.Submitted;
     order.status = OrderStatus.Accepted;
+    return order;
   }
 }
