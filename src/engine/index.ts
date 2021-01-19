@@ -2,7 +2,7 @@ import { ConsoleLogger, Logger } from '../logger';
 import { DataProvider, DataStore, DATA_COLUMNS } from '../data';
 import { Strategy } from '../stratergy';
 import { Broker, BrokerOptions, LocalBroker } from '../broker';
-import { Indicator } from 'src/indicator';
+import { Indicator } from '../indicator';
 
 interface TypetraderOptions {
   logger?: Logger;
@@ -77,6 +77,27 @@ export class Typetrader {
         if (store._index >= store._array.length) continue; // no data, skip
         await this._run(store, this.strats.filter(st => st.data === store));
       }
+    }
+  }
+
+  destroy() {
+    try {
+      this.data.destroy();
+    } catch(ex) {
+      this.logger.error(ex);
+    }
+    this.strats.forEach(strat => {
+      try {
+        strat.destroy();
+      } catch(ex) {
+        this.logger.error(ex);
+      }
+    });
+    this.strats.length = 0;
+    try {
+      this.broker.destroy();
+    } catch(ex) {
+      this.logger.error(ex);
     }
   }
 }

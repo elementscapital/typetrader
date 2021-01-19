@@ -8,8 +8,9 @@
     "alwaysStrict": true,
     "moduleResolution": "node",
     "sourceMap": true,
-    "outDir": "dist",
-    "baseUrl": ".",
+    "declaration": true,
+    "outDir": "lib",
+    "baseUrl": "./src",
     "paths": {
     }
   },

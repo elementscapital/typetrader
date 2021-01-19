@@ -2,17 +2,27 @@ import { promises as fs } from 'fs';
 import {
   DataPoint, DATA_FIELDS, DataField
 } from '../common';
-import { DataStore, getMaxIndicatorPeriod } from '../store';
+import { DataStore, getMaxIndicatorPeriodOffset } from '../store';
 import { DataProvider } from './base';
 
 // type FilterFn = (dataPoint: DataPoint) => boolean;
 
+type CSVSource<T extends string> = {
+  symbol: T;
+} & ({
+  /**
+   * csv file name
+   */
+  file: string;
+} | {
+  /**
+   * csv content
+   */
+  content: string;
+});
+
 export interface CSVDataOptions<T extends string> {
-  source: {
-    file: string; symbol: T;
-  } | {
-    file: string; symbol: T;
-  }[],
+  source: CSVSource<T> | CSVSource<T>[],
   timestamp: {
     type: 'second' | 'millsecond' | 'date' | 'datetime';
     /**
@@ -66,18 +76,23 @@ export class CSVData<T extends string> extends DataProvider<T> {
 
     let headerLine;
     for await(const src of sources) {
-      const lines = (await fs.readFile(src.file, 'utf-8')).split('\n');
+      let lines: string[];
+      if ('file' in src) {
+        lines = (await fs.readFile(src.file, 'utf-8')).split('\n');
+      } else {
+        lines = src.content.split('\n');
+      }
       if (headerLine && lines[0] !== headerLine) {
         throw new Error('header columns must be same between csv source files');
       }
       headerLine = lines[0];
       if (!headerLine) {
-        throw new Error('csv file header missing: ' + src.file);
+        throw new Error('csv file header missing: ' + ((src as { file: string }).file || lines[0]));
       }
       const headerSegs = headerLine.split(',').map(v => v.trim().toLocaleLowerCase());
       const timeColumnIndex = headerSegs.indexOf((timestamp.column || 'timestamp').toLocaleLowerCase());
       if (timeColumnIndex < 0) {
-        throw new Error('header of csv file miss timestamp column: ' + src.file);
+        throw new Error('header of csv file miss timestamp column: ' + ((src as { file: string }).file || lines[0]));
       }
       headerSegs.forEach((hc: DataField, i) => {
         if (i === timeColumnIndex) return;
@@ -109,7 +124,7 @@ export class CSVData<T extends string> extends DataProvider<T> {
         });
         store._array.push(dp);
       });
-      store._index = Math.max(0, getMaxIndicatorPeriod(store) - 1);
+      store._index = getMaxIndicatorPeriodOffset(store);
     }
   }
 

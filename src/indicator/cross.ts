@@ -11,7 +11,7 @@ export class CrossOver extends Indicator {
   }) {
     super({
       ...options,
-      period: Math.max(options.data[0].period, options.data[1].period) + 1
+      poffset: Math.max(options.data[0].poffset, options.data[1].poffset) + 1
     });
     this.lnzd = null;
   }
@@ -20,7 +20,7 @@ export class CrossOver extends Indicator {
     const [data0, data1] = this.sources as Indicator[];
     const maxLen = Math.max(data0.length, data1.length);
     this._array = new Array(maxLen).fill(0).map((n, i) => {
-      if (i < this.period - 1) return null;
+      if (i < this.poffset) return null;
       const diff = data0._array[i] - data1._array[i];
       if (diff === 0) return 0;
       const lnzd = this.lnzd;
@@ -32,7 +32,7 @@ export class CrossOver extends Indicator {
       } else if (lnzd > 0 && diff < 0) {
         return -1;
       } else {
-        throw new Error('unexpected');
+        return 0;
       }
     });
   }

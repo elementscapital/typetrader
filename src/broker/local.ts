@@ -1,5 +1,5 @@
-import { DataStore } from 'src/data';
-import { Strategy } from 'src/stratergy';
+import { DataStore } from '../data';
+import { Strategy } from '../stratergy';
 import {
   Order, OrderStatus, OrderType
 } from '../order';
@@ -16,8 +16,8 @@ export class LocalBroker extends Broker {
 
   constructor(options?: BrokerOptions) {
     super({
+      cash: 100000,
       ...options,
-      cash: 100000
     });
   }
 

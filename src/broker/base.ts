@@ -6,13 +6,16 @@ import { CommissionFn, CommissionOptions, innerCommissionFn } from '../commissio
 import { isFunction, isNumber } from '../util';
 import { Position } from './position';
 import { Trade } from './trade';
-import { Strategy } from 'src/stratergy';
+import { Strategy } from '../stratergy';
 
 function assertCash(cash: number) {
   if (cash <= 0) throw new Error('cash must be greater than zero');
 }
 
 export interface BrokerOptions {
+  /**
+   * initialize cash of broker, default is 100000
+   */
   cash?: number;
   commission?: number | CommissionOptions | CommissionFn;
 }
@@ -31,7 +34,7 @@ export class Broker {
   }>;
 
   constructor(options?: BrokerOptions) {
-    this._cash = options?.cash || 0;
+    this._cash = options?.cash || 1000;
     let comm = options.commission;
     if (isNumber(comm)) {
       comm = { comm } as CommissionOptions;
@@ -80,5 +83,10 @@ export class Broker {
 
   async submitOrder(order: Order): Promise<Order> {
     throw new Error('abstract method');
+  }
+
+  destroy() {
+    this._products.clear();
+    this._commFn = null;
   }
 }

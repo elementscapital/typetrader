@@ -65,4 +65,12 @@ export class DataColumnLine {
   toArray() {
     return this._line._array.map(v => v[this.column]);
   }
+
+  destroy() {
+    this._line = null;
+    this._ind.forEach(ind => {
+      ind.destroy();
+    });
+    this._ind.length = 0;
+  }
 }

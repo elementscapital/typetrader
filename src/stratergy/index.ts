@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Order, OrderOptions } from '../order';
-import { Broker } from '../broker';
+import { Broker, Trade } from '../broker';
 import { DataStore } from '../data';
 import { Logger } from '../logger';
-import { Trade } from 'src/broker/trade';
 
 type StratOrderOptions = Exclude<OrderOptions, 'product'>;
 
@@ -68,5 +67,9 @@ export class Strategy {
   sell(options?: StratOrderOptions): Promise<Order>;
   sell(sizeOrOptions?: number | StratOrderOptions): Promise<Order> {
     return this._submit(sizeOrOptions, false);
+  }
+
+  destroy() {
+    // nothing to do
   }
 }

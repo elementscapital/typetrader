@@ -2,9 +2,10 @@
   "name": "typetrader",
   "version": "0.0.1",
   "description": "lightweight framework for backtesting and trading",
-  "main": "dist/index.js",
+  "main": "lib/src/index.js",
   "scripts": {
-    "watch": "rm -rf ./dist && tsc -w",
+    "watch": "rm -rf ./lib && tsc -w",
+    "tsc": "rm -rf ./lib && tsc",
     "lint": "eslint ."
   },
   "repository": {

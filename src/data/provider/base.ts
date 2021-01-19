@@ -24,4 +24,10 @@ export class DataProvider<T extends string = string> {
   async read(logger: Logger): Promise<DataStore[]> {
     throw new Error('abstract method');
   }
+
+  destroy() {
+    Object.values<DataStore>(this.stores).forEach(store => {
+      store.destroy();
+    });
+  }
 }
