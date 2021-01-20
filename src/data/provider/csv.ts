@@ -18,7 +18,7 @@ type CSVSource<T extends string> = {
   /**
    * csv content
    */
-  content: string;
+  content: string | string[];
 });
 
 export interface CSVDataOptions<T extends string> {
@@ -79,6 +79,8 @@ export class CSVData<T extends string> extends DataProvider<T> {
       let lines: string[];
       if ('file' in src) {
         lines = (await fs.readFile(src.file, 'utf-8')).split('\n');
+      } else if (Array.isArray(src.content)) {
+        lines = src.content;
       } else {
         lines = src.content.split('\n');
       }
