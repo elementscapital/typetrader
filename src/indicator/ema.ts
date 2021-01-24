@@ -1,8 +1,46 @@
-import { SingleDataIdicator } from './base';
-import { EMA,  } from 'talib-binding';
+import { SingleDataIdicator, SingleDataIdicatorOptions } from './base';
+import { EMA  } from 'talib-binding';
 
 export class ExponentialMovingAverage extends SingleDataIdicator  {
+  private _pfixed: boolean;
+  private _alpha: number;
+  private _alpha1: number;
+  private _c: number;
+
+  constructor(options: SingleDataIdicatorOptions & {
+    periodFixed?: boolean;
+  }) {
+    super(options);
+    this._pfixed = options.periodFixed;
+    this._alpha =  2.0 / (1.0 + this.period);
+    this._alpha1 = 1.0 - this._alpha;
+    this._c = 1 / (1 - Math.pow((1 - this._alpha), this.period));
+  }
+
   _calc(points: number[]): number[] {
-    return EMA(points, this.period);
+    
+    let result: number[];
+    if (!this._pfixed) {
+      result = EMA(points, this.period);
+    } else {
+      result = [];
+      let sum = 0;
+      for(let i = 0; i < this.period; i++) {
+        sum += points[i];
+      }
+      let prev = sum / this.period;
+      result.push(prev);
+      for(let i = this.period; i < points.length; i++) {
+        const v = (
+          prev * this._alpha1 + points[i] * this._alpha * this._c
+          - points[i - this.period] * this._c * this._alpha * Math.pow(this._alpha1, this.period) 
+        );
+        result.push(v);
+        prev = v;
+      }
+      // console.log(result);
+    }
+    // console.log(this.period, result.slice(result.length - 5).join(','));
+    return result;
   }
 }
