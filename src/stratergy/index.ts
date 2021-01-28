@@ -46,7 +46,7 @@ export class Strategy {
     throw new Error('abstract method');
   }
 
-  private _submit(sizeOrOptions: number | StratOrderOptions, isBuy: boolean): Promise<Order> {
+  private _submit(sizeOrOptions: number | StratOrderOptions, isBuy: boolean): Order {
     const order = new Order({
       ...(typeof sizeOrOptions === 'number' ? { size: sizeOrOptions } : sizeOrOptions),
       product: this.data
@@ -57,15 +57,15 @@ export class Strategy {
     return this._broker.submitOrder(order);
   }
 
-  buy(size: number): Promise<Order>;
-  buy(options?: StratOrderOptions): Promise<Order>;
-  buy(sizeOrOptions?: number | StratOrderOptions): Promise<Order> {
+  buy(size: number): Order;
+  buy(options?: StratOrderOptions): Order;
+  buy(sizeOrOptions?: number | StratOrderOptions): Order {
     return this._submit(sizeOrOptions, true);
   }
 
-  sell(size: number): Promise<Order>;
-  sell(options?: StratOrderOptions): Promise<Order>;
-  sell(sizeOrOptions?: number | StratOrderOptions): Promise<Order> {
+  sell(size: number): Order;
+  sell(options?: StratOrderOptions): Order;
+  sell(sizeOrOptions?: number | StratOrderOptions): Order {
     return this._submit(sizeOrOptions, false);
   }
 

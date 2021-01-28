@@ -1,5 +1,5 @@
-import { DataPoint, DATA_COLUMNS } from './common';
-import { DataColumnLine, DataLine } from './line';
+import { DataPoint, DATA_COLUMNS, getLoopIndex } from './common';
+import { DataColumnLine } from './line';
 
 export function getMaxIndicatorPeriodOffset(store: DataStore): number {
   let mp = 0;
@@ -11,7 +11,7 @@ export function getMaxIndicatorPeriodOffset(store: DataStore): number {
   if (mp < 0) throw new Error('unexpected');
   return mp;
 }
-export class DataStore extends DataLine<DataPoint> {
+export class DataStore {
   readonly timestamp: DataColumnLine;
   readonly open: DataColumnLine;
   readonly high: DataColumnLine;
@@ -21,13 +21,31 @@ export class DataStore extends DataLine<DataPoint> {
   readonly openintrest: DataColumnLine;
   readonly symbol: string;
 
+   /**
+   * @internal
+   */
+  _array: DataPoint[];
+  /**
+   * @internal
+   */
+  _index: number;
+
   constructor(symbol: string) {
-    super();
     this.symbol = symbol;
+    this._array = [];
+    this._index = 0;
 
     for(const column of DATA_COLUMNS) {
       this[column] = new DataColumnLine(this, column);
     }
+  }
+
+  get length() {
+    return this._array.length;
+  }
+
+  at(offset = 0): DataPoint {
+    return this._array[getLoopIndex(this._index + offset, this._array.length)];
   }
 
   destroy() {

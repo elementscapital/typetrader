@@ -46,7 +46,7 @@ class TestStrategy extends Strategy {
       return;
     }
     if (order.status === OrderStatus.Completed) {
-      this.log(`${order.isBuy ? 'BUY' : 'SELL'} EXECUTED, ${order.price.toFixed(2)}`);
+      this.log(`${order.isBuy ? 'BUY' : 'SELL'} EXECUTED, ${order.exePrice.toFixed(2)}`);
     }
     this.order = null;
   }
@@ -59,12 +59,12 @@ class TestStrategy extends Strategy {
     if (!this.position) {
       if (this.dataclose.at(0) > this.sma.at(0)) {
         this.log('BUY CREATE, ' + this.dataclose.at(0).toFixed(2));
-        this.order = await this.buy(this.size);
+        this.order = this.buy(this.size);
       }
     } else {
       if (this.dataclose.at(0) < this.sma.at(0)) {
         this.log('SELL CREATE, ' + this.dataclose.at(0).toFixed(2));
-        this.order = await this.sell(this.size);
+        this.order = this.sell(this.size);
       }
     }
   }

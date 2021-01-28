@@ -22,6 +22,7 @@ export class Typetrader {
     this.data = options.data;
     this.strats = Array.isArray(options.strategy) ? options.strategy : [options.strategy];
     const broker = options.broker instanceof Broker ? options.broker : new LocalBroker(options.broker);
+    broker._engine = this;
     this.broker = broker;
     this.strats.forEach(strat => strat._broker = broker);
   }
@@ -72,7 +73,6 @@ export class Typetrader {
     while(true) {
       const changedStores = await this.data.read(this.logger);
       if (!changedStores?.length) break;
-      
       for await(const store of changedStores) {
         if (store._index >= store._array.length) continue; // no data, skip
         await this._run(store, this.strats.filter(st => st.data === store));

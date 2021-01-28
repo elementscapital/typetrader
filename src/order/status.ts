@@ -7,5 +7,6 @@ export enum OrderStatus {
   Rejected = 'Rejected',
   Margin = 'Margin',
   Cancelled = 'Cancelled',
-  Expired = 'Expired'
+  Expired = 'Expired',
+  Error = 'Error'
 }

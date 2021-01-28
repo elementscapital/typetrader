@@ -1,35 +1,10 @@
-import { DataColumn, getLoopIndex } from './common';
+import { DataColumn } from './common';
 import { DataStore } from './store';
 import { Indicator } from '../indicator/base';
 
 export interface Line {
   at(offset: number): number;
 }
-
-export class DataLine<T> {
-  /**
-   * @internal
-   */
-  _array: T[];
-  /**
-   * @internal
-   */
-  _index: number;
-
-  constructor() {
-    this._array = [];
-    this._index = 0;
-  }
-
-  get length() {
-    return this._array.length;
-  }
-
-  at(offset = 0): T {
-    return this._array[getLoopIndex(this._index + offset, this._array.length)];
-  }
-}
-
 
 export class DataColumnLine {
   /**
