@@ -24,11 +24,11 @@ export class ExponentialMovingAverage extends SingleDataIdicator  {
       result = EMA(points, this.period);
     } else {
       result = [];
-      let sum = 0;
+      let s = 0;
       for(let i = 0; i < this.period; i++) {
-        sum += points[i];
+        s += points[i] * Math.pow(this._alpha1, this.period - 1 - i);
       }
-      let prev = sum / this.period;
+      let prev = s * this._alpha * this._c;
       result.push(prev);
       for(let i = this.period; i < points.length; i++) {
         const v = (
