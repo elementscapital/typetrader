@@ -3,7 +3,7 @@ import {
 } from '../order';
 import { Broker, BrokerOptions } from './base';
 
-export type SubmitOrderAPIFn = (action: 'BUY' | 'SELL', position: number) => Promise<{
+export type SubmitOrderAPIFn = (action: 'BUY' | 'SELL', product: string, position: number) => Promise<{
   position: number; price: number;
 }>;
 
@@ -23,7 +23,7 @@ export class IBHttpBroker extends Broker {
 
   submitOrder(order: Order): Order {
     super.submitOrder(order);
-    this._apiFn(order.isBuy ? 'BUY' : 'SELL', order.size).then(info => {
+    this._apiFn(order.isBuy ? 'BUY' : 'SELL', order.product.symbol, order.size).then(info => {
       order.exeSize = info.position;
       order.exePrice = info.price;
       const productInfo = this._products.get(order.product);

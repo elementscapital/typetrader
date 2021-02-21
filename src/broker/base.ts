@@ -65,13 +65,17 @@ export class Broker {
 
   protected initPositions(positions: Map<DataStore, Position>) {
     positions.forEach((position, data) => {
+      if (position.size === 0) return;
       this._products.set(data, this.initProductInfo(position));
     });
   }
 
   protected initProductInfo(position: Position = null): ProductInfo {
     return {
-      position, trade: null
+      position, trade: position ? new Trade({
+        pnl: Math.abs(position.size) * position.price,
+        pnlcomm: this._commFn ? this._commFn(Math.abs(position.size), position.price) : 0
+      }) : null
     };
   }
 
