@@ -7,3 +7,4 @@ node_modules
 .jshintrc
 /dist
 /build
+/lib
