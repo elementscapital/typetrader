@@ -6,3 +6,5 @@ dist/
 node_modules/
 examples/vegas*
 lib/
+.jshintignore
+.jshintrc
